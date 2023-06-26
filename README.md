@@ -1,6 +1,8 @@
-# AI Getting Started
+# Corporate Strategy Simulator
 
-[Live Demo (deployed on fly.io)](https://ai-getting-started.com/)
+[Dev instance https://corprate-strategy-simulation.fly.dev/](https://corprate-strategy-simulation.fly.dev/)
+
+[AI Getting Started Live Demo (deployed on fly.io)](https://ai-getting-started.com/)
 
 [Join our community Discord: AI Stack Devs](https://discord.gg/PQUmTBTGmT)
 
