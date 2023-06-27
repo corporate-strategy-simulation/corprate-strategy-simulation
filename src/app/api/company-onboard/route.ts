@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
-import { LLMChain, PromptTemplate } from "langchain";
+import { LLMChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
+import { PromptTemplate } from "langchain/prompts";
 import { NextResponse } from "next/server";
 
 dotenv.config({ path: `.env.local` });

@@ -19,7 +19,7 @@ const CompanyOnboardModal = ({ open, setOpen }: CompanyOnboardModalProps) => {
     api: "/api/company-onboard",
   });
 
-  const onboardCompanyResponse: Record<string, string> = useMemo(() => {
+  const onboardCompanyResponse: Record<string, any> = useMemo(() => {
     console.log("response", completion, isLoading);
     // the string will not be valid JSON until it is finished loading
     if (!completion || isLoading) return null;
@@ -104,7 +104,7 @@ const CompanyOnboardModal = ({ open, setOpen }: CompanyOnboardModalProps) => {
                     Features:
                   </h3>
                   <ul className="mt-2 text-sm text-gray-500">
-                    {onboardCompanyResponse.features ? onboardCompanyResponse.features.map((feature, i) => (
+                    {onboardCompanyResponse.features ? onboardCompanyResponse.features.map((feature: string, i: string) => (
                         <li key={i}>{feature}</li>
                         )
                     ) : null}
