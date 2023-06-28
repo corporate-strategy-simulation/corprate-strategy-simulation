@@ -19,8 +19,12 @@ const CompanyOnboardModal = ({ open, setOpen }: CompanyOnboardModalProps) => {
     api: "/api/company-onboard",
   });
 
+  const [features, setFeatures] = useState<string[]>([]);
   const onboardCompanyResponse: Record<string, any> = useMemo(() => {
     console.log("response", completion, isLoading);
+    // clear features (game state) when onboarding completes
+    setFeatures([]);
+
     // the string will not be valid JSON until it is finished loading
     if (!completion || isLoading) return null;
     try {
@@ -30,7 +34,32 @@ const CompanyOnboardModal = ({ open, setOpen }: CompanyOnboardModalProps) => {
     }
     return null;
   }, [completion, isLoading]);
-  console.log("onboardCompanyResponse", onboardCompanyResponse);
+
+  const handleAddFeature = () => {
+    setFeatures((prevFeatures) => [
+      ...prevFeatures,
+      ...onboardCompanyResponse.features.slice(
+        prevFeatures.length,
+        prevFeatures.length + 1
+      ),
+    ]);
+  };
+
+  const renderFeatures = () => {
+    if (features.length === 0) {
+      return <p>No features yet.</p>;
+    }
+
+    return (
+      <>
+        <ul>
+          {features.map((feature, index) => (
+            <li key={index}>{feature}</li>
+          ))}
+        </ul>
+      </>
+    );
+  };
 
   return (
     <Transition.Root show={open} as={React.Fragment}>
@@ -100,15 +129,19 @@ const CompanyOnboardModal = ({ open, setOpen }: CompanyOnboardModalProps) => {
                   <p className="mt-2 text-sm text-gray-500">
                     {onboardCompanyResponse.serviceDescription}
                   </p>
+                  <button
+                    onClick={handleAddFeature}
+                    disabled={isLoading}
+                    className="inline-flex items-center px-4 py-2 mt-4 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    {isLoading ? "Loading..." : "Add Feature"}
+                  </button>
                   <h3 className="text-lg font-medium text-gray-900 mt-4">
                     Features:
                   </h3>
                   <ul className="mt-2 text-sm text-gray-500">
-                    {onboardCompanyResponse.features ? onboardCompanyResponse.features.map((feature: string, i: string) => (
-                        <li key={i}>{feature}</li>
-                        )
-                    ) : null}
-                  </ul>                  
+                    {renderFeatures()}
+                  </ul>
                 </div>
               )}
             </div>
