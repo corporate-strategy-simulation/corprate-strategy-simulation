@@ -13,9 +13,9 @@ export default function Home() {
 
         <p className="mx-auto mt-4 max-w-xl text-center text-xl leading-8 text-slate-400">
           A simulation game which explores/satirizes generative AI strategies
-          and hype, while exploring generative AI tools and libraries. Play the
-          role of a CEO of a growing company, and make decisions about how to
-          grow your company.
+          and hype, while making use of generative AI. Play the role of a CEO of
+          a technology company, and make decisions about how to grow your
+          company.
         </p>
 
         <CorporateSimulation />

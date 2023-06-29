@@ -43,7 +43,7 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   const [features, setFeatures] = useState<string[]>([]);
   const [plannedFeatures, setPlannedFeatures] = useState<string[]>([]);
   const onboardCompanyResponse: Record<string, any> = useMemo(() => {
-    console.log("response", completion, isLoading);
+    console.log("/api/company-onboard response", completion, isLoading);
     // clear features (game state) when onboarding completes
     setFeatures([]);
 
@@ -56,6 +56,42 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     }
     return null;
   }, [completion, isLoading]);
+
+  const {
+    completion: generateFeaturesCompletion,
+    input: generateFeaturesInput,
+    isLoading: generateFeaturesIsLoading,
+    setInput: generateFeaturesSetInput,
+    complete: generateFeaturesComplete,
+    error: generateFeaturesError,
+  } = useCompletion({
+    api: "/api/generate-conventional-features",
+  });
+
+  const generatedFeatures: string[] = useMemo(() => {
+    console.log(
+      "/api/generate-conventional-features response",
+      generateFeaturesCompletion,
+      generateFeaturesIsLoading
+    );
+    if (!generateFeaturesCompletion || generateFeaturesIsLoading) return [];
+    try {
+      const completionObject: { suggestions: string[] } = JSON.parse(
+        generateFeaturesCompletion
+      );
+      return completionObject.suggestions;
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  }, [generateFeaturesCompletion, generateFeaturesIsLoading]);
+
+  // when there are
+  useEffect(() => {
+    if (generatedFeatures && generatedFeatures.length > 0) {
+      setFutureFeaturesBuffer([...futureFeaturesBuffer, ...generatedFeatures]);
+    }
+  }, [generatedFeatures]);
 
   const [company, setCompany] = useState<Company>();
   const [corporateWorld, setCorporateWorld] = useState<CorporateWorld>();
@@ -125,6 +161,28 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   const handleAddFeature = () => {
     setPlannedFeatures((prevFeatures) => {
       const additionalFeature = futureFeaturesBuffer.shift();
+      if (
+        !generateFeaturesIsLoading &&
+        futureFeaturesBuffer.length < 20 &&
+        company &&
+        company.services[0]
+      ) {
+        // don't wait for the promise; this can proceed asynchronously
+        const generatePromiseIgnored = generateFeaturesComplete(
+          JSON.stringify({
+            companyName: onboardCompanyResponse.companyName,
+            serviceName: onboardCompanyResponse.serviceName,
+            serviceDescription: onboardCompanyResponse.serviceDescription,
+            features: [
+              ...[
+                ...company.services[0].features,
+                ...company.services[0].plannedFeatures,
+              ].map((f) => f.name),
+              ...futureFeaturesBuffer,
+            ],
+          })
+        );
+      }
       if (!additionalFeature) {
         // TODO get more features from the server when we are out or nearly out
         return prevFeatures;
@@ -241,6 +299,9 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
             >
               {isLoading ? "Loading..." : "Plan Feature"}
             </button>
+            <span className="ml-2 text-gray-400 text-sm">
+              ({futureFeaturesBuffer.length})
+            </span>
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Planned Features:
             </h3>
