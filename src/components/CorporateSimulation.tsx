@@ -40,6 +40,9 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   const [futureFeaturesBuffer, setFutureFeaturesBuffer] = useState<string[]>(
     []
   );
+  const [futureAiFeaturesBuffer, setFutureAiFeaturesBuffer] = useState<
+    string[]
+  >([]);
   const [features, setFeatures] = useState<string[]>([]);
   const [plannedFeatures, setPlannedFeatures] = useState<string[]>([]);
   const onboardCompanyResponse: Record<string, any> = useMemo(() => {
@@ -59,11 +62,8 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
 
   const {
     completion: generateFeaturesCompletion,
-    input: generateFeaturesInput,
     isLoading: generateFeaturesIsLoading,
-    setInput: generateFeaturesSetInput,
     complete: generateFeaturesComplete,
-    error: generateFeaturesError,
   } = useCompletion({
     api: "/api/generate-conventional-features",
   });
@@ -86,12 +86,48 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     return [];
   }, [generateFeaturesCompletion, generateFeaturesIsLoading]);
 
-  // when there are
+  // when there are new generated features, add them to the buffer
   useEffect(() => {
     if (generatedFeatures && generatedFeatures.length > 0) {
       setFutureFeaturesBuffer([...futureFeaturesBuffer, ...generatedFeatures]);
     }
   }, [generatedFeatures]);
+
+  const {
+    completion: generateAiFeaturesCompletion,
+    isLoading: generateAiFeaturesIsLoading,
+    complete: generateAiFeaturesComplete,
+  } = useCompletion({
+    api: "/api/generate-ai-features",
+  });
+
+  const generatedAiFeatures: string[] = useMemo(() => {
+    console.log(
+      "/api/generate-ai-features response",
+      generateAiFeaturesCompletion,
+      generateAiFeaturesIsLoading
+    );
+    if (!generateAiFeaturesCompletion || generateAiFeaturesIsLoading) return [];
+    try {
+      const completionObject: { suggestions: string[] } = JSON.parse(
+        generateAiFeaturesCompletion
+      );
+      return completionObject.suggestions;
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  }, [generateAiFeaturesCompletion, generateAiFeaturesIsLoading]);
+
+  // when there are new generated AI features, add them to the buffer
+  useEffect(() => {
+    if (generatedAiFeatures && generatedAiFeatures.length > 0) {
+      setFutureAiFeaturesBuffer([
+        ...futureAiFeaturesBuffer,
+        ...generatedAiFeatures,
+      ]);
+    }
+  }, [generatedAiFeatures]);
 
   const [company, setCompany] = useState<Company>();
   const [corporateWorld, setCorporateWorld] = useState<CorporateWorld>();
@@ -106,6 +142,7 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     }
 
     setFutureFeaturesBuffer(onboardCompanyResponse.features);
+    setFutureAiFeaturesBuffer([]);
     setFeatures([]);
     setPlannedFeatures([]);
 
@@ -161,6 +198,7 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   const handleAddFeature = () => {
     setPlannedFeatures((prevFeatures) => {
       const additionalFeature = futureFeaturesBuffer.shift();
+      startGenerateAiFeatures();
       if (
         !generateFeaturesIsLoading &&
         futureFeaturesBuffer.length < 20 &&
@@ -184,7 +222,6 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
         );
       }
       if (!additionalFeature) {
-        // TODO get more features from the server when we are out or nearly out
         return prevFeatures;
       }
       setFutureFeaturesBuffer([...futureFeaturesBuffer]);
@@ -207,19 +244,74 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     });
   };
 
+  /**
+   * Check to see if mroe AI features should be generated, and if so generate them
+   */
+  function startGenerateAiFeatures() {
+    if (
+      !generateAiFeaturesIsLoading &&
+      futureAiFeaturesBuffer.length < 20 &&
+      company &&
+      company.services[0]
+    ) {
+      // don't wait for the promise; this can proceed asynchronously
+      const promiseIgnored = generateAiFeaturesComplete(
+        JSON.stringify({
+          companyName: onboardCompanyResponse.companyName,
+          serviceName: onboardCompanyResponse.serviceName,
+          serviceDescription: onboardCompanyResponse.serviceDescription,
+          features: [
+            ...[
+              ...company.services[0].features,
+              ...company.services[0].plannedFeatures,
+            ].map((f) => f.name),
+            ...futureAiFeaturesBuffer,
+          ],
+        })
+      );
+    }
+  }
+
+  const handleAddAiFeature = () => {
+    setPlannedFeatures((prevFeatures) => {
+      const additionalAiFeature = futureAiFeaturesBuffer.shift();
+      startGenerateAiFeatures();
+      if (!additionalAiFeature) {
+        return prevFeatures;
+      }
+      setFutureAiFeaturesBuffer([...futureAiFeaturesBuffer]);
+
+      const newAiFeatureName = additionalAiFeature;
+      const newAiFeature: Feature = {
+        name: newAiFeatureName,
+        developmentCostDays: 60,
+        perUserHostingCost: 0.09,
+        perUserLicenseCost: 0.03,
+        popularityMetric: 130,
+        developmentProgress: 0,
+        maintenanceCostDaysPerMonth: 4,
+        maintained: true,
+      };
+
+      // also update the company's planned features
+      company?.services[0].plannedFeatures.push(newAiFeature);
+      return [...prevFeatures, additionalAiFeature];
+    });
+  };
+
   const renderFeatures = (targetFeatures: string[]) => {
     if (targetFeatures.length === 0) {
       return <p className="text-gray-500">No features currently.</p>;
     }
 
     return (
-      <>
-        <ul>
-          {targetFeatures.map((feature, index) => (
-            <li key={index}>{feature}</li>
-          ))}
-        </ul>
-      </>
+      <ol className="mt-2 text-sm text-gray-300 list-decimal">
+        {targetFeatures.map((feature, index) => (
+          <li className="list-item" key={index}>
+            {feature}
+          </li>
+        ))}
+      </ol>
     );
   };
 
@@ -302,18 +394,24 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
             <span className="ml-2 text-gray-400 text-sm">
               ({futureFeaturesBuffer.length})
             </span>
+            <button
+              onClick={handleAddAiFeature}
+              disabled={isLoading || users < 1000}
+              className="mt-4 ml-2 flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {isLoading ? "Loading..." : "Plan AI Feature"}
+            </button>
+            <span className="ml-2 text-gray-400 text-sm">
+              ({futureAiFeaturesBuffer.length})
+            </span>
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Planned Features:
             </h3>
-            <ul className="mt-2 text-sm text-gray-300">
-              {renderFeatures(plannedFeatures)}
-            </ul>
+            {renderFeatures(plannedFeatures)}
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Implemented Features:
             </h3>
-            <ul className="mt-2 text-sm text-gray-300">
-              {renderFeatures(features)}
-            </ul>
+            {renderFeatures(features)}
           </div>
         )}
       </div>
