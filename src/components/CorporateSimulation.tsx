@@ -8,6 +8,7 @@ import {
 import { CorporateWorld } from "@/simulation/CorporateWorld";
 import { useCompletion } from "ai/react";
 import { format } from "date-fns";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useInterval } from "react-timing-hooks";
 
@@ -138,6 +139,7 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
       simulationInterval.stop();
       setCompany(undefined);
       setCorporateWorld(undefined);
+      setLogoImgSrc("");
       return;
     }
 
@@ -315,6 +317,28 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     );
   };
 
+  const [logoImgSrc, setLogoImgSrc] = useState("");
+  const [generateLogoLoading, setGenerateLogoLoading] = useState(false);
+  const generateLogo = async (e: any) => {
+    e.preventDefault();
+    setGenerateLogoLoading(true);
+    const response = await fetch("/api/generate-logo", {
+      method: "POST",
+      body: JSON.stringify({
+        // prompt: e.target.value,
+        companyName: onboardCompanyResponse.companyName,
+        serviceName: onboardCompanyResponse.serviceName,
+        serviceDescription: onboardCompanyResponse.serviceDescription,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+    setLogoImgSrc(data[0]);
+    setGenerateLogoLoading(false);
+  };
+
   return (
     <div className="flex items-center justify-center">
       <div className="max-w-3xl">
@@ -370,6 +394,49 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
             <p className="mt-2 text-sm text-gray-300">
               {onboardCompanyResponse.serviceDescription}
             </p>
+            <div className="mt-4">
+              <button
+                onClick={generateLogo}
+                className="flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                disabled={generateLogoLoading}
+              >
+                {generateLogoLoading ? "Loading..." : "Generate Logo"}
+              </button>
+            </div>
+            {logoImgSrc && !generateLogoLoading && (
+              <Image
+                width={0}
+                height={0}
+                sizes="100vw"
+                src={logoImgSrc}
+                alt="img"
+                className="w-full h-full object-contain"
+              />
+            )}
+            {generateLogoLoading && (
+              <p className="flex items-center justify-center mt-4">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </p>
+            )}
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Simuated Date:
             </h3>
