@@ -318,24 +318,30 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   };
 
   const [logoImgSrc, setLogoImgSrc] = useState("");
+  const [logoDescription, setLogoDescription] = useState("");
   const [generateLogoLoading, setGenerateLogoLoading] = useState(false);
   const generateLogo = async (e: any) => {
     e.preventDefault();
     setGenerateLogoLoading(true);
-    const response = await fetch("/api/generate-logo", {
-      method: "POST",
-      body: JSON.stringify({
-        // prompt: e.target.value,
-        companyName: onboardCompanyResponse.companyName,
-        serviceName: onboardCompanyResponse.serviceName,
-        serviceDescription: onboardCompanyResponse.serviceDescription,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const data = await response.json();
-    setLogoImgSrc(data[0]);
+    try {
+      const response = await fetch("/api/generate-logo", {
+        method: "POST",
+        body: JSON.stringify({
+          // prompt: e.target.value,
+          companyName: onboardCompanyResponse.companyName,
+          serviceName: onboardCompanyResponse.serviceName,
+          serviceDescription: onboardCompanyResponse.serviceDescription,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      setLogoImgSrc(data[0].source);
+      setLogoDescription(data[0].description);
+    } catch (error) {
+      console.error(error);
+    }
     setGenerateLogoLoading(false);
   };
 
@@ -405,12 +411,12 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
             </div>
             {logoImgSrc && !generateLogoLoading && (
               <Image
-                width={0}
-                height={0}
-                sizes="100vw"
+                width={512}
+                height={512}
                 src={logoImgSrc}
-                alt="img"
-                className="w-full h-full object-contain"
+                alt={logoDescription}
+                title={logoDescription}
+                className="object-contain"
               />
             )}
             {generateLogoLoading && (

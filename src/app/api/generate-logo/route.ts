@@ -12,28 +12,38 @@ export async function POST(request: Request) {
 
   const promptTemplate = new PromptTemplate({
     template: `Generate a concise, specific prompt for a text-to-image model to generate a logo for a subscription service
-    named {serviceName}.
+named {serviceName}.
 
-    The prompt must specify the image style and include specific details of subject.
+The prompt must specify the image style and include specific details of the subject. The prompt must use the following
+format:
+<style> logo of <subject>, <addition style keywords, subject details>.
 
-    Examples of prompts for logos:
-     - Logo design, logo style, modern, Luxurious, Geometrical, vector, adobe illustrator, symmetrical, sacred mushroom, plant medicine, white background, Psychedelic Shop.
-     - Vector anime chibi style logo featuring a single piece of flaming piece of popcorn with a smiling face, with mirrorshades sunglasses, popcorn as morpheus, clean composition, symmetrical.
-     - A modern and sleek logo for a tech company specializing in virtual reality technology. The logo should incorporate a futuristic vibe and feature a 3D geometric shape with a gradient color scheme.
-     - E-sports Logo, Lion, vector art, black & white.
-     - A colorful and whimsical logo for a children’s toy store. The logo should include an illustration of a friendly animal, such as a teddy bear or a unicorn, and incorporate a playful font.
-     - A bold and edgy logo for a fashion-forward streetwear brand. The logo should incorporate a graffiti-style font and feature an abstract graphic with a vibrant color scheme.
+The the service {serviceName} is described as follows: {serviceDescription}
 
-    The the service {serviceName} is described as follows: {serviceDescription}
+Based on the name and description of the service, select an appropriate subject for a simple, clear logo.
+Consider a subject which is symbolic or evocative of the service, or a subject which could indirectly relate to the service.
+Do not explain the symbolism, just use a concise description of the subject.
+Do not include any words or suggestions for text in the logo.
+Do not include any letters in the logo.
 
-    The logo should be inspired by or somehow represent the service based on the name and description of the service.
+Select a style and subject for the logo based on the name and description of the service, and then generate
+a prompt in the requested format, similar to the examples, using the selected style and subject for the service.
+Pick a single, specific subject to use in the prompt.
 
-    Respond only with the prompt for the logo, with no other text before or after the prompt.
+Examples of prompts for logos:
+  - "Logo design, logo style, modern, Luxurious, Geometrical, vector, adobe illustrator, symmetrical logo of sacred mushroom, plant medicine, white background, Psychedelic Shop."
+  - "Vector anime chibi style logo of a single piece of flaming popcorn with a smiling face, with mirrorshades sunglasses, popcorn as morpheus, clean composition, symmetrical."
+  - "A modern and sleek logo of a 3D geometric shape with a gradient color scheme, futuristic vibe."
+  - "E-sports logo of a lion, vector art, black & white."
+  - "A colorful and whimsical logo of a friendly teddy bear, illustration."
+  - "A bold and edgy logo of an abstract graphic with a vibrant color scheme, for a fashion-forward streetwear brand."
+
+Respond only with the prompt for the logo, with no other text before or after the prompt.
 `,
     inputVariables: ["serviceName", "serviceDescription"],
   });
 
-  let imagePrompt;
+  let imagePrompt: string;
   try {
     const model = new OpenAI({
       streaming: true,
@@ -61,9 +71,16 @@ export async function POST(request: Request) {
       input: {
         prompt: imagePrompt,
         negative_prompt: "text",
+        image_dimensions: "512x512",
       },
     }
   );
 
-  return NextResponse.json(output);
+  const outputArray = output as string[];
+  return NextResponse.json(
+    outputArray.map((item) => ({
+      source: item,
+      description: imagePrompt,
+    }))
+  );
 }
