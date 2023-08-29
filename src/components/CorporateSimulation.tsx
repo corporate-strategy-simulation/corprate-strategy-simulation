@@ -318,10 +318,12 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
   };
 
   const [logoImgSrc, setLogoImgSrc] = useState("");
+  const [logoError, setLogoError] = useState<Error | undefined>();
   const [logoDescription, setLogoDescription] = useState("");
   const [generateLogoLoading, setGenerateLogoLoading] = useState(false);
   const generateLogo = async (e: any) => {
     e.preventDefault();
+    setLogoError();
     setGenerateLogoLoading(true);
     try {
       const response = await fetch("/api/generate-logo", {
@@ -339,7 +341,10 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
       const data = await response.json();
       setLogoImgSrc(data[0].source);
       setLogoDescription(data[0].description);
-    } catch (error) {
+    } catch (error: any) {
+      setLogoImgSrc("");
+      setLogoDescription("");
+      setLogoError(error);
       console.error(error);
     }
     setGenerateLogoLoading(false);
@@ -442,6 +447,13 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
                   ></path>
                 </svg>
               </p>
+            )}
+            {logoError && (
+              <div>
+                <p className="text-red-500 mt-4">
+                  An error occurred while generating the logo.
+                </p>
+              </div>
             )}
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Simuated Date:
