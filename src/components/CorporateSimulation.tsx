@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useInterval } from "react-timing-hooks";
+import { SalesDemoSimulation } from "./SalesDemoSimulation";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -350,6 +351,8 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
     setGenerateLogoLoading(false);
   };
 
+  const [showSalesDemo, setShowSalesDemo] = useState(false);
+
   return (
     <div className="flex items-center justify-center">
       <div className="max-w-3xl">
@@ -469,26 +472,46 @@ const CorporateSimulation = ({}: CorporateSimulationProps) => {
               {numberFormatter.format(users)} ::&nbsp;
               {currencyFormatter.format(valuation)}
             </p>
-            <button
-              onClick={handleAddFeature}
-              disabled={isLoading}
-              className="mt-4 flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              {isLoading ? "Loading..." : "Plan Feature"}
-            </button>
-            <span className="ml-2 text-gray-400 text-sm">
-              ({futureFeaturesBuffer.length})
-            </span>
-            <button
-              onClick={handleAddAiFeature}
-              disabled={isLoading || users < 1000}
-              className="mt-4 ml-2 flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              {isLoading ? "Loading..." : "Plan AI Feature"}
-            </button>
-            <span className="ml-2 text-gray-400 text-sm">
-              ({futureAiFeaturesBuffer.length})
-            </span>
+            {showSalesDemo ? (
+              <>
+                <SalesDemoSimulation features={features} />
+                <button
+                  onClick={() => setShowSalesDemo(false)}
+                  className="inline-flex items-center px-4 py-2 mt-4 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  End Demo
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowSalesDemo(true)}
+                className="inline-flex items-center px-4 py-2 mt-4 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Start Sales Demo
+              </button>
+            )}
+            <div>
+              <button
+                onClick={handleAddFeature}
+                disabled={isLoading}
+                className="mt-4 flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                {isLoading ? "Loading..." : "Plan Feature"}
+              </button>
+              <span className="ml-2 text-gray-400 text-sm">
+                ({futureFeaturesBuffer.length})
+              </span>
+              <button
+                onClick={handleAddAiFeature}
+                disabled={isLoading || users < 1000}
+                className="mt-4 ml-2 flex-none rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                {isLoading ? "Loading..." : "Plan AI Feature"}
+              </button>
+              <span className="ml-2 text-gray-400 text-sm">
+                ({futureAiFeaturesBuffer.length})
+              </span>
+            </div>
             <h3 className="text-lg font-medium text-gray-100 mt-4">
               Planned Features:
             </h3>
